@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, Text, View, TouchableHighlight, ListView, Dimensions,ScrollView, Image, Platform,TouchableOpacity, NativeModules,YellowBox} from 'react-native';
+import { StyleSheet, Text, View, TouchableHighlight, ListView, Dimensions,ScrollView, Image, Platform,TouchableOpacity, NativeModules,YellowBox,AsyncStorage} from 'react-native';
 import {createBottomTabNavigator} from 'react-navigation';
 import { Container,Left,Right,Icon } from 'native-base';
 import { Header } from 'react-navigation';
@@ -17,10 +17,11 @@ const RtdType = {
     TEXT: 1,
 };
 
-export default class Home2Screen extends React.Component{
+export default class KeysScreen extends React.Component{
 	constructor(props){
 		super(props);
 		this.state = ({
+			loading: false,
 			supported: true,
             enabled: false,
             isWriting: false,
@@ -28,11 +29,18 @@ export default class Home2Screen extends React.Component{
             rtdType: RtdType.URL,
             parsedText: null,
             tag: {},
-			beaming: false
+			beaming: false,
+			texte :'',
+			message: '',
+			whoamI:'Home Door'
 		});
 		
 	}
 
+	static  navigationOptions = {
+		header: null
+	}
+		 
 	componentDidMount() {
         NfcManager.isSupported()
             .then(supported => {
@@ -47,63 +55,102 @@ export default class Home2Screen extends React.Component{
         if (this._stateChangedSubscription) {
             this._stateChangedSubscription.remove();
         }
+	}
+	_parseUri = (tag) => {
+        try {
+            if (Ndef.isType(tag.ndefMessage[0], Ndef.TNF_WELL_KNOWN, Ndef.RTD_URI)) {
+                return Ndef.uri.decodePayload(tag.ndefMessage[0].payload);
+            }
+        } catch (e) {
+            console.log(e);
+        }
+        return null;
+    }
+
+    _parseText = (tag) => {
+        try {
+            if (Ndef.isType(tag.ndefMessage[0], Ndef.TNF_WELL_KNOWN, Ndef.RTD_TEXT)) {
+                return Ndef.text.decodePayload(tag.ndefMessage[0].payload);
+            }
+        } catch (e) {
+            console.log(e);
+        }
+        return null;
+	}
+	
+	_isok = (test) => {
+		let that = this;
+		this.setState({ loading: true });
+		let dn = test.name.replace(/ /g,'');
+		dn = dn.toLowerCase();
+		let link = "http://192.168.1.37:3000/doors?user="+test.user+"&value="+test.value+"&dname="+dn;
+		return fetch(link)
+		.then((response) => response.json())
+		.then((responseJson) => {
+			that.setState({
+			loading: false,
+			dataSource: responseJson,
+			}, function() {
+				console.log("Data from database got it sussesfully");
+			});
+			if(responseJson.Code == "200"){
+				this.props.navigation.navigate('Ok');
+			}
+			else{
+				this.props.navigation.navigate('Fail');
+			}
+
+		})
+		.catch((error) => {
+			console.error(error);
+		});
+	}
+
+	_onTagDiscovered = tag => {
+        console.log('Tag Discovered', tag);
+		let text = this._parseText(tag);
+		let aux = JSON.parse(text);
+		if(aux.name == this.state.whoamI){
+			this._isok(aux);
+			this.setState({texte: text});
+		}
     }
 	
-		  static navigationOptions = ({navigation}) =>{
-			return{
-				headerTintColor: 'white',
-				headerLeft:(
-					<View style={{padding:10}}>
-						<Icon name ="menu" style={{fontSize: 24, color : 'white'}} onPress={()=>navigation.openDrawer()} />
-					</View>
-				),
-				headerTitle: () => (
-					<View style={styles.headerWrapper}>
-					  <Text
-						adjustsFontSizeToFit
-						style={styles.headerText}>NFCdoor</Text>
-					</View>
-				  ),
-				headerStyle: {
-					backgroundColor: '#000',
-				  },
-				headerRight: (<View/>)
-			}
-	}
+	_startDetection = () => {
+        NfcManager.registerTagEvent(this._onTagDiscovered)
+            .then(result => {
+				console.log('Read OK', result)
+            })
+            .catch(error => {
+                console.warn('registerTagEvent fail', error)
+            })
+    }
+
+	_retrieveData = async () => {
+		try {
+		  const value = await AsyncStorage.getItem('TOKEN');
+		  if (value !== null) {
+			this.setState({message: value});
+			console.log(value);
+		  }
+		  else{
+			this.setState({message: "null"});
+		  }
+		 } catch (error) {
+			this.setState({message: "error"});
+		 }
+	  }
+
 
 	render(){
 		let backgroundColor = 'black';
-		let { supported, enabled, tag, isWriting, urlToWrite, parsedText, rtdType } = this.state;
-
+		let { texte } = this.state;
 		return(
-			<View style={{flex: 1}}>
-			<View style={styles.containertitul}> 
-					<Text style={{textAlign: 'center', fontWeight: '500', fontSize: 18}}>KEYS</Text>
-			</View>
-			<View style={styles.container}>
-				<TouchableOpacity
-					style={styles.item}
-					onPress={() => {this.props.screenProps.navigation.navigate('Home')}}
-					>
-					<Icon name="key" style={{fontSize: 90, color: '#403D3D'}} />
-					<Text style={styles.itemText}>KEYS</Text>
-				</TouchableOpacity>
-			
-				<TouchableOpacity
-					style={styles.item2}
-					onPress={() => {}}
-					>
-					<Icon name="settings" style={{fontSize: 70, color: '#403D3D'}} />
-					<Text style={styles.itemText}>Settings</Text>
-				</TouchableOpacity>
-			
-				<TouchableOpacity
-					style={styles.item3}
-					onPress={() => {}}
-					>
-					<Text style={{fontSize: 20, color:'white'}}>{`Is NFC supported ? ${supported}`}</Text>
-				</TouchableOpacity>
-			</View>	
+			<View style={{flex: 1, justifyContent:'center',alignItems:'center'}}>
+				<TouchableOpacity style={{ marginTop: 20 }} onPress={this._startDetection}>
+                        <Text style={{ color: 'blue',fontSize:22 }}>Listening...</Text>
+                </TouchableOpacity>
+				<Text>{`Bytes: ${texte}`} </Text>
 			</View>
 		)
 	}
@@ -114,46 +161,32 @@ const styles = StyleSheet.create({
 	container:{
 		flex: 1,
     	backgroundColor: '#fff',
-		alignItems: 'center',
+		flexDirection: 'row',
+		padding: 10
 	},
 	item: {
-		flex: 3,
-		width: width,
+		flex: 1,
 		flexDirection: 'row',
 		alignItems: 'center',
 		justifyContent: 'center',
 		paddingHorizontal: 16,
 		opacity: 0.99,
-		borderBottomWidth :5,
-		borderBottomColor: '#fff',
 		backgroundColor: '#CBCBCB',
-		padding: 10,
-		marginBottom: 10,
+		borderRadius: 15,
+		marginRight: 10,
+		marginLeft: 10,
+		marginTop: 10
 	  },
 	  item2: {
-		flex: 2,
-		width: width,
+		flex: 1,
 		flexDirection: 'row',
 		alignItems: 'center',
 		justifyContent: 'center',
 		paddingHorizontal: 16,
 		opacity: 0.99,
-		borderBottomWidth :5,
-		borderBottomColor: '#fff',
 		backgroundColor: '#CBCBCB',
-		padding: 10,
-		marginBottom: 10,
-	  },
-	  item3: {
-		flex: 1,
-		width: width,
-		flexDirection: 'column',
-		alignItems: 'center',
-		justifyContent: 'center',
-		paddingHorizontal: 16,
-		opacity: 0.99,
-		backgroundColor: '#CBCBCB',
-		padding: 10,
+		borderRadius: 15,
+		margin: 10
 	  },
 	  containertitul: {
 		height: 40,
@@ -161,22 +194,12 @@ const styles = StyleSheet.create({
 		justifyContent: 'center',
 	},
 	itemText: {
-		fontSize: 40,
+		fontSize: 10,
 		color: 'white',
 		fontWeight: '500',
 		marginLeft: 20,
 		marginLeft: 20
 	  },
-	  lastItem: {
-		width: width,
-		flexDirection: 'row',
-		height: 100,
-		alignItems: 'center',
-		paddingHorizontal: 16,
-		borderBottomWidth: 1,
-		borderColor: '#000000',
-		backgroundColor: 'white'
-	},
 	headerWrapper: {
 	flex: 1
 	},

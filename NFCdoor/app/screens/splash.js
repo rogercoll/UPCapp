@@ -5,7 +5,8 @@ import {
   View,
   Dimensions,
   StatusBar,
-  Text
+  Text,
+  AsyncStorage
 } from 'react-native';
 import {scale, scaleModerate, scaleVertical} from '../utils/scale';
 import {ProgressBar} from '../components/progressBar';
@@ -14,6 +15,11 @@ import { StackActions, NavigationActions, DrawerActions} from 'react-navigation'
 let timeFrame = 500;
 
 const actionToDispatch = StackActions.reset({
+    index: 0,
+    actions: [NavigationActions.navigate({ routeName: 'Login' })], // Array!
+  })
+
+const actionToDispatchLogged = StackActions.reset({
     index: 0,
     actions: [NavigationActions.navigate({ routeName: 'DrawerNavigator' })], // Array!
   })
@@ -33,6 +39,21 @@ export default class SplashScreen extends React.Component {
 		}
 	  }
 
+	  _retrieveData = async () => {
+		try {
+		  const value = await AsyncStorage.getItem('TOKEN');
+		  if (value !== null) {
+			return 1;
+		  }
+		  else{
+			return 0;
+		}
+		 } catch (error) {
+			return 0;
+		 }
+	  }
+
+
 	  componentDidMount() {
 		StatusBar.setHidden(true, 'none');
 	
@@ -41,7 +62,13 @@ export default class SplashScreen extends React.Component {
 			clearInterval(this.timer);
 			setTimeout(() => {
 			  StatusBar.setHidden(false, 'slide');
-				this.props.navigation.dispatch(actionToDispatch);				
+
+			  AsyncStorage.getItem("TOKEN").then((value) => {
+					if(value !== null) 	this.props.navigation.dispatch(actionToDispatchLogged);				
+				})
+				.then(res => {
+					this.props.navigation.dispatch(actionToDispatch);				
+				});
 			}, timeFrame);
 		  } else {
 			let random = Math.random() * 0.5;

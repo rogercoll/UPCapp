@@ -7,12 +7,9 @@ import {
     TouchableOpacity,
     Linking,
     TextInput,
-	ScrollView,
-	StyleSheet
+    ScrollView,
 } from 'react-native';
 import NfcManager, {Ndef} from 'react-native-nfc-manager';
-import { Header } from 'react-navigation';
-import { Container,Left,Right,Icon } from 'native-base';
 
 const RtdType = {
     URL: 0,
@@ -43,24 +40,7 @@ class HomeScreen extends Component {
             parsedText: null,
             tag: {},
         }
-	}
-	
-	static navigationOptions = ({navigation}) =>{
-		return{
-			headerTintColor: 'white',
-			headerTitle: () => (
-				<View style={styles.headerWrapper}>
-				  <Text
-					adjustsFontSizeToFit
-					style={styles.headerText}>NFCdoor</Text>
-				</View>
-			  ),
-			headerStyle: {
-				backgroundColor: '#000',
-			  },
-			headerRight: (<View/>)
-		}
-	}
+    }
 
     componentDidMount() {
         NfcManager.isSupported()
@@ -82,14 +62,8 @@ class HomeScreen extends Component {
         let { supported, enabled, tag, isWriting, urlToWrite, parsedText, rtdType } = this.state;
         return (
             <ScrollView style={{flex: 1}}>
-				{ Platform.OS === 'ios' && <View style={{ height: 60 }} /> }
-				
-				<View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-					<TouchableOpacity style={styles.buttonkey}> 
-						<Icon name="key" size={30} />
-						<Text>Room key</Text>
-					</TouchableOpacity>
-				</View>
+                { Platform.OS === 'ios' && <View style={{ height: 60 }} /> }
+
                 <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
                     <Text>{`Is NFC supported ? ${supported}`}</Text>
                     <Text>{`Is NFC enabled (Android only)? ${enabled}`}</Text>
@@ -365,25 +339,3 @@ class HomeScreen extends Component {
 }
 
 export default HomeScreen;
-
-
-let styles = StyleSheet.create({
-	headerWrapper: {
-		flex: 1
-		},
-		headerText: {
-		textAlign: 'center', // ok
-		alignSelf: 'center', // ok
-		color: 'white',
-		fontWeight: '900',
-		fontSize: 20
-		},
-	buttonkey: {
-		flex: 1,
-		margin: 10,
-		padding: 10,
-		flexDirection: 'column',
-		backgroundColor: '#CBCBCB',
-		opacity: 0.8
-	}
-  });

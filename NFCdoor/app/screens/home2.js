@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, Text, View, TouchableHighlight, ListView, Dimensions,ScrollView, Image, Platform,TouchableOpacity, NativeModules,YellowBox} from 'react-native';
+import { StyleSheet, StatusBar, Text, View, TouchableHighlight, ListView, Dimensions,ScrollView, Image, Platform,TouchableOpacity, NativeModules,YellowBox} from 'react-native';
 import {createBottomTabNavigator} from 'react-navigation';
 import { Container,Left,Right,Icon } from 'native-base';
 import { Header } from 'react-navigation';
@@ -50,6 +50,7 @@ export default class Home2Screen extends React.Component{
     }
 	
 		  static navigationOptions = ({navigation}) =>{
+			const params = navigation.state.params; 
 			return{
 				headerTintColor: 'white',
 				headerLeft:(
@@ -77,13 +78,14 @@ export default class Home2Screen extends React.Component{
 
 		return(
 			<View style={{flex: 1}}>
+				  	<StatusBar backgroundColor='#000' barStyle='light-content' />
 			<View style={styles.containertitul}> 
-					<Text style={{textAlign: 'center', fontWeight: '500', fontSize: 18}}>HOME</Text>
+					<Text style={{textAlign: 'center', fontWeight: '500', fontSize: 18}}>HOME - {this.props.navigation.getParam('tet', 'NO-ID')}</Text>
 			</View>
 			<View style={styles.container}>
 				<TouchableOpacity
 					style={styles.item}
-					onPress={() => {this.props.screenProps.navigation.navigate('Home')}}
+					onPress={() => {this.props.screenProps.navigation.navigate('TotesClaus')}}
 					>
 					<Icon name="key" style={{fontSize: 90, color: '#403D3D'}} />
 					<Text style={styles.itemText}>KEYS</Text>
@@ -91,15 +93,15 @@ export default class Home2Screen extends React.Component{
 			
 				<TouchableOpacity
 					style={styles.item2}
-					onPress={() => {}}
+					onPress={() => {this.props.screenProps.navigation.navigate('Keys')}}
 					>
-					<Icon name="settings" style={{fontSize: 70, color: '#403D3D'}} />
-					<Text style={styles.itemText}>Settings</Text>
+					<Icon name="home" style={{fontSize: 70, color: '#403D3D'}} />
+					<Text style={styles.itemText}>Doors</Text>
 				</TouchableOpacity>
 			
 				<TouchableOpacity
 					style={styles.item3}
-					onPress={() => {}}
+					onPress={() => {this.props.screenProps.navigation.navigate('Home')}}
 					>
 					<Text style={{fontSize: 20, color:'white'}}>{`Is NFC supported ? ${supported}`}</Text>
 				</TouchableOpacity>
